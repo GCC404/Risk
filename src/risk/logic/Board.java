@@ -10,35 +10,117 @@ import risk.generator.Generator;
 public class Board
 {
 	private static Board instance;
-	private static ArrayList<Player> players=new ArrayList<Player>();
-	private static int currentPlayer, oldterr=-1;
-	private static Map<String,Territory> territories=new HashMap<String,Territory>();
-	private static Stack<Card> deck=new Stack<Card>();
+	private ArrayList<Player> players=new ArrayList<Player>();
+	private int currentPlayer, oldterr=-1;
+	private Map<String,Territory> territories=new HashMap<String,Territory>();
+	private Stack<Card> deck=new Stack<Card>();
 
 	private Board()
 	{
-		currentPlayer=-1;
+		currentPlayer=0;
 		initTerritories();
 		initDeck();
 		Collections.shuffle(deck);
 	}
 
 	private void initDeck() {
-		//TODO acabar de preencher isto
-		deck.push(new Card("Alaska",1));
+		deck.push(new Card("Alaska",10));
+		deck.push(new Card("Alberta",1));
+		deck.push(new Card("Central America",1));
+		deck.push(new Card("Eastern United States",10));
+		deck.push(new Card("Greenland",10));
+		deck.push(new Card("Northwest Territory",10));
+		deck.push(new Card("Ontario",5));
+		deck.push(new Card("Quebec",10));
+		deck.push(new Card("Western United States",1));
+		
+		deck.push(new Card("Argentina",5));
+		deck.push(new Card("Brazil",5));
+		deck.push(new Card("Peru",10));
+		deck.push(new Card("Venezuela",1));
+		
+		deck.push(new Card("Great Britain",10));
+		deck.push(new Card("Iceland",10));
+		deck.push(new Card("Northern Europe",5));
+		deck.push(new Card("Scandinavia",5));
+		deck.push(new Card("Southern Europe",1));
+		deck.push(new Card("Ukraine",5));
+		deck.push(new Card("Western Europe",1));
+		
+		deck.push(new Card("Congo",5));
+		deck.push(new Card("East Africa",10));
+		deck.push(new Card("Egypt",5));
+		deck.push(new Card("Madagascar",10));
+		deck.push(new Card("North Africa",1));
+		deck.push(new Card("South Africa",1));
+		
+		deck.push(new Card("Afghanistan",1));
+		deck.push(new Card("China",5));
+		deck.push(new Card("India",5));
+		deck.push(new Card("Irkutsk",5));
+		deck.push(new Card("Japan",10));
+		deck.push(new Card("Kamchatka",10));
+		deck.push(new Card("Middle East",1));
+		deck.push(new Card("Mongolia",1));
+		deck.push(new Card("Siam",10));
+		deck.push(new Card("Siberia",5));
+		deck.push(new Card("Ural",1));
+		deck.push(new Card("Yakutsk",5));
+		
+		deck.push(new Card("Eastern Australia",5));
+		deck.push(new Card("Indonesia",1));
+		deck.push(new Card("New Guinea",10));
+		deck.push(new Card("Western Australia",1));
 	}
 
 	private void initTerritories() {
-		//TODO acabar de preencher isto
-		territories.put("Alaska", new Territory("Alaska","Northwest Territory","Kamchatka"));
-		territories.put("Alberta", new Territory("Alberta","Northwest Territory","Ontario","Western United States"));
-		territories.put("Central America", new Territory("Central America"));
-		territories.put("Eastern United States", new Territory("Eastern United States"));
-		territories.put("Greenland", new Territory("Greenland"));
-		territories.put("Northwest Territory", new Territory("Northwest Territory"));
-		territories.put("Ontario", new Territory("Ontario"));
-		territories.put("Quebec", new Territory("Quebec"));
-		territories.put("Western United States", new Territory("Western United States"));
+		territories.put("Alaska", new Territory("Alaska", "North America", "Alberta", "Northwest Territory", "Kamohatka"));
+		territories.put("Alberta", new Territory("Alberta", "North America", "Alaska", "Northwest Territory", "Ontario", "Western United States"));
+		territories.put("Central America", new Territory("Central America", "North America", "Eastern United States", "Western United States", "Venezuela"));
+		territories.put("Eastern United States", new Territory("Eastern United States", "North America", "Central America", "Ontario", "Quebec", "Western United States", "Iceland"));
+		territories.put("Greenland", new Territory("Greenland", "North America", "Northwest Territory", "Ontario", "Quebec"));
+		territories.put("Northwest Territory", new Territory("Northwest Territory", "North America", "Alaska", "Alberta", "Ontario", "Greenland"));
+		territories.put("Ontario", new Territory("Ontario", "North America", "Alberta", "Greenland", "Northwest Territory", "Quebec", "Eastern United States", "Western United States"));
+		territories.put("Quebec", new Territory("Quebec", "North America", "Greenland", "Ontario", "Eastern United States"));
+		territories.put("Western United States", new Territory("Western United States", "North America", "Alberta", "Central America", "Eastern United States", "Ontario"));
+
+		territories.put("Argentina", new Territory("Argentina", "South America", "Brazil", "Peru"));
+		territories.put("Brazil", new Territory("Brazil", "South America", "Argentina", "Peru", "Venezuela", "North Africa"));
+		territories.put("Peru", new Territory("Peru", "South America", "Argentina", "Brazil", "Venezuela"));
+		territories.put("Venezuela", new Territory("Venezuela", "South America", "Argentina", "Brazil", "Peru", "Central America"));
+
+		territories.put("Great Britain", new Territory("Great Britain", "Europe", "Iceland", "Northern Europe", "Scandinavia", "Western Europe"));
+		territories.put("Iceland", new Territory("Iceland", "Europe", "Great Britain", "Scandinavia", "Greenland"));
+		territories.put("Northern Europe", new Territory("Northern Europe", "Europe", "Great Britain", "Western Europe", "Southern Europe", "Ukraine"));
+		territories.put("Scandinavia", new Territory("Scandinavia", "Europe", "Great Britain", "Iceland", "Northern Europe", "Ukraine"));
+		territories.put("Southern Europe", new Territory("Southern Europe", "Europe", "Western Europe", "Northern Europe", "Ukraine", "Egypt", "North Africa", "Middle East"));
+		territories.put("Ukraine", new Territory("Ukraine", "Europe", "Northern Europe", "Scandinavia", "Southern Europe", "Afghanistan", "Middle East", "Ural"));
+		territories.put("Western Europe", new Territory("Western Europe", "Europe", "Great Britain", "Northern Europe", "Southern Europe", "North Africa"));
+
+		territories.put("Congo", new Territory("Congo", "Africa", "East Africa", "North Africa", "South Africa"));
+		territories.put("East Africa", new Territory("East Africa", "Africa", "Congo", "Egypt", "Madagascar", "North Africa", "south Africa", "Middle East"));
+		territories.put("Egypt", new Territory("Egypt", "Africa", "East Africa", "North Africa", "Southern Europe", "Middle East"));
+		territories.put("Madagascar", new Territory("Madagascar", "Africa", "East Africa", "South Africa"));
+		territories.put("North Africa", new Territory("North Africa", "Africa", "Congo", "East Africa", "Egypt", "Brazil"));
+		territories.put("South Africa", new Territory("South Africa", "Africa", "Congo", "East Africa", "Madagascar"));
+
+		territories.put("Afghanistan", new Territory("Afghanistan", "Asia", "China", "India", "Middle East", "Ural", "Ukraine"));
+		territories.put("China", new Territory("China", "Asia", "Afghanistan", "India", "Mongolia", "Siam", "SIberia", "Ural"));
+		territories.put("India", new Territory("India", "Asia", "Afghanistan", "China", "Middle East", "Siam"));
+		territories.put("Irkutsh", new Territory("Irkutsh", "Asia", "Kamohatka", "Mongolia", "Siberia", "Yakutsh"));
+		territories.put("Japan", new Territory("Japan", "Asia", "Kamohatka", "Mongolia"));
+		territories.put("Kamohatka", new Territory("Kamohatka", "Asia", "Irkutsh", "Japan", "Mongolia", "Yakutsh", "Alaska"));
+		territories.put("Middle East", new Territory("Middle East", "Asia", "Afghanistan", "India", "Southern Europe", "Ukraine", "East Africa", "Egypt"));
+		territories.put("Mongolia", new Territory("Mongolia", "Asia", "China", "Irkutsh", "Japan", "Siberia", "Ural"));
+		territories.put("Siam", new Territory("Siam", "Asia", "China", "India", "Indonesia"));
+		territories.put("Siberia", new Territory("Siberia", "Asia", "China", "Irkutsh", "Mongolia", "Ural", "Yakutsh"));
+		territories.put("Ural", new Territory("Ural", "Asia", "Afghanistan", "China", "Siberia", "Ukraine"));
+		territories.put("Yakutsh", new Territory("Yakutsh", "Asia", "Irkutsh", "Kamohatka", "Siberia"));
+
+		territories.put("Eastern Australia", new Territory("Eastern Australia", "Australia", "New Guinea", "Western Australia"));
+		territories.put("Indonesia", new Territory("Indonesia", "Australia", "New Guinea", "Siam"));
+		territories.put("New Guinea", new Territory("New Guinea", "Australia", "Eastern Australia", "Indonesia", "Western Australia"));
+		territories.put("Western Australia", new Territory("Western Australia", "Australia", "Eastern Australia", "New Guinea"));
 	}
 
 	public boolean addPlayer(Player newPlayer) {
@@ -96,9 +178,20 @@ public class Board
 	public int getCardNr() {
 		return players.get(currentPlayer).getCardNr();
 	}
+	
+	public int getCardsInDeck() {
+		return deck.size();
+	}
 
-	public ArrayList<Card[]> canRedeem() {
-		return players.get(currentPlayer).canRedeem();
+	ArrayList<Card> getCards() {
+		if(getCardNr()>=5)
+			players.get(currentPlayer).redeem();
+
+		return players.get(currentPlayer).getCards();
+	}
+	
+	public void redeem() {
+		players.get(currentPlayer).redeem();
 	}
 
 	public void occupy(String territory,int armies) {
@@ -107,12 +200,12 @@ public class Board
 	}
 
 	public void randomOccupy() {
-		
+
 		int occupying=0;
 
 		for(int i=0; i<territories.size(); i++) {
 			Card drawn=getCard();
-			
+
 			if(occupying==-1 || occupying==players.size()-1)
 				occupying=0;
 			else occupying+=1;
@@ -192,10 +285,11 @@ public class Board
 			return false;
 
 		territories.get(origin).removeArmies(armies);
-		territories.get(origin).occupy(currentPlayer, armies);
+		territories.get(target).occupy(currentPlayer, armies);
 
 		return true;
 	}
+
 	/*
 	private boolean rollDie(String target) {
 		//TODO fazer isto
@@ -204,26 +298,24 @@ public class Board
 	 */
 
 	public boolean nextPlaying() {
+		
+		if(players.get(currentPlayer).getNumTerritories()==41)
+			return false;
 
-		if(players.get(currentPlayer).getNumTerritories()>0)
+		if(players.get(currentPlayer).getNumTerritories()>0) {	
+			reinforce();
+			
 			if(players.get(currentPlayer).getNumTerritories()>oldterr)
 				players.get(currentPlayer).addCard(getCard());
+			
+			oldterr=players.get(currentPlayer).getNumTerritories();
+		}
 
 		if(currentPlayer==-1 || currentPlayer==players.size()-1)
 			currentPlayer=0;
 		else currentPlayer+=1;
 
-		if(players.get(currentPlayer).getNumTerritories()>0) {
-			oldterr=players.get(currentPlayer).getNumTerritories();
-
-			reinforce();
-
-			return true;
-		}
-		else if(players.get(currentPlayer).getNumTerritories()==41)
-			return false;
-
-		return nextPlaying();
+		return true;
 	}
 
 	public int getNumPlayers() {
@@ -243,7 +335,7 @@ public class Board
 
 	public static Board getInstance()
 	{
-		if (instance == null)
+		//if (instance == null)
 			instance = new Board();
 
 		return instance;

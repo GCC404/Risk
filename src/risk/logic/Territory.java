@@ -33,8 +33,9 @@ public class Territory {
 	}
 	
 	public boolean removeArmies(int armies) {
-		
+		System.out.println(this.name+" antes:"+this.armies);
 		this.armies-=armies;
+		System.out.println(this.name+" depois:"+this.armies);
 		
 		return this.armies==0;
 	}
