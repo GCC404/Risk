@@ -4,8 +4,8 @@ import java.util.Arrays;
 
 
 public class Territory {
-	private int armies=0;
-	private String name, ownerColor, continent;
+	private int armies=0, playerId=-1;
+	private String name, continent;
 	private String[] adjacent; 
 	
 	public Territory(String... args) {
@@ -13,23 +13,22 @@ public class Territory {
 		this.continent=args[1];
 		adjacent=new String[args.length-1];
 		this.adjacent=Arrays.copyOfRange(args, 2, args.length);
-		ownerColor="Blank";
 	}
 	
 	public int getArmies() {
 		return this.armies;
 	}
 	
-	public String getOwner() {
-		return this.ownerColor;
+	public int getOwner() {
+		return this.playerId;
 	}
 	
 	public String getName() {
 		return this.name;
 	}
 	
-	public void occupy(String playerColor, int armies) {
-		this.ownerColor=playerColor;
+	public void occupy(int playerId, int armies) {
+		this.playerId=playerId;
 		this.armies+=armies;
 	}
 	

@@ -2,7 +2,7 @@ package risk.logic;
 import java.util.ArrayList;
 import java.util.List;
 
-abstract class Player {
+public class Player {
 
 	private List<Territory> territories=new ArrayList<Territory>();
 	private String color;

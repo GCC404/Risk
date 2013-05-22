@@ -5,11 +5,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
-class Board
+import risk.generator.Generator;
+
+public class Board
 {
 	private static Board instance;
 	private static ArrayList<Player> players=new ArrayList<Player>();
-	private static int currentPlayer;
+	private static int currentPlayer, oldterr=-1;
 	private static Map<String,Territory> territories=new HashMap<String,Territory>();
 	private static Stack<Card> deck=new Stack<Card>();
 
@@ -64,24 +66,24 @@ class Board
 
 		for (Map.Entry<String, Territory> entry : territories.entrySet())
 			switch(entry.getValue().getContinent()) {
-				case "North America":
-					na+=1;
-					break;
-				case "South America":
-					sa+=1;
-					break;
-				case "Africa":
-					africa+=1;
-					break;
-				case "Asia":
-					asia+=1;
-					break;
-				case "Europe":
-					europe+=1;
-					break;
-				case "Australia":
-					australia+=1;
-					break;
+			case "North America":
+				na+=1;
+				break;
+			case "South America":
+				sa+=1;
+				break;
+			case "Africa":
+				africa+=1;
+				break;
+			case "Asia":
+				asia+=1;
+				break;
+			case "Europe":
+				europe+=1;
+				break;
+			case "Australia":
+				australia+=1;
+				break;
 			}
 
 		return nr;
@@ -90,48 +92,153 @@ class Board
 	public Player getPlayer() {
 		return players.get(currentPlayer);
 	}
-	
+
 	public int getCardNr() {
 		return players.get(currentPlayer).getCardNr();
 	}
-	
+
 	public ArrayList<Card[]> canRedeem() {
 		return players.get(currentPlayer).canRedeem();
 	}
-	
+
 	public void occupy(String territory,int armies) {
-		territories.get(territory).occupy(players.get(currentPlayer).getColor(), armies);
+		territories.get(territory).occupy(currentPlayer, armies);
 		players.get(currentPlayer).occupy(territories.get(territory));
 	}
 
 	public void randomOccupy() {
-		Card drawn=getCard();
+		
+		int occupying=0;
 
-		territories.get(drawn.getTerritory()).occupy(players.get(currentPlayer).getColor(), drawn.getArmies());
-		players.get(currentPlayer).occupy(territories.get(drawn.getTerritory()));
+		for(int i=0; i<territories.size(); i++) {
+			Card drawn=getCard();
+			
+			if(occupying==-1 || occupying==players.size()-1)
+				occupying=0;
+			else occupying+=1;
+
+			territories.get(drawn.getTerritory()).occupy(occupying, drawn.getArmies());
+			players.get(occupying).occupy(territories.get(drawn.getTerritory()));
+		}
 	}
 
 	public Card getCard() {
 		return deck.pop();
 	}
 
-	public void attack(String origin, String target) {
-		//TODO fazer
+	public int getTerrArmies(String territory) {
+		return territories.get(territory).getArmies();
 	}
-	
+
+	public int getTerrPlayer(String territory) {
+		return territories.get(territory).getOwner();
+	}
+
+	public boolean attack(String origin, String target) {
+		if(!checkIfConnected(origin, target))
+			return false;
+
+
+
+		int maxatck=0, maxdefend=0, roll;
+
+		for(int i=0; i<(territories.get(origin).getArmies())%4-1; i++) {
+			roll=Generator.nextInt(6)+1;
+
+			if(roll>maxatck)
+				maxatck=roll;
+		}
+
+		for(int i=0; i<(territories.get(target).getArmies())%3-1; i++) {
+			roll=Generator.nextInt(6)+1;
+
+			if(roll>maxdefend)
+				maxatck=roll;
+		}
+
+
+
+		if(maxatck>maxdefend) {
+
+			if(territories.get(target).removeArmies(-1)) {
+				occupy(target,(territories.get(origin).getArmies())%4-1);
+
+				if(players.get(territories.get(target).getOwner()).getNumTerritories()==0) {
+					Card[] cards=players.get(territories.get(target).getOwner()).removeCards(null);
+
+					for(Card card: cards)
+						players.get(currentPlayer).addCard(card);
+
+
+				}
+			}
+
+
+		} else territories.get(origin).removeArmies(-1);
+
+
+
+		return true;
+	}
+
 	public boolean checkIfConnected(String origin, String target) {
 		return territories.get(origin).checkIfConnected(target);
 	}
-	
-	public boolean rollDie(String target) {
+
+	public boolean move(String origin, String target, int armies) {
+
+		if(!checkIfConnected(origin, target) || territories.get(origin).getOwner()!=currentPlayer ||
+				territories.get(target).getOwner()!=currentPlayer || armies>territories.get(origin).getArmies()-1)
+			return false;
+
+		territories.get(origin).removeArmies(armies);
+		territories.get(origin).occupy(currentPlayer, armies);
+
+		return true;
+	}
+	/*
+	private boolean rollDie(String target) {
 		//TODO fazer isto
 		return true;
 	}
-	
-	public void nextPlaying() {
+	 */
+
+	public boolean nextPlaying() {
+
+		if(players.get(currentPlayer).getNumTerritories()>0)
+			if(players.get(currentPlayer).getNumTerritories()>oldterr)
+				players.get(currentPlayer).addCard(getCard());
+
 		if(currentPlayer==-1 || currentPlayer==players.size()-1)
 			currentPlayer=0;
 		else currentPlayer+=1;
+
+		if(players.get(currentPlayer).getNumTerritories()>0) {
+			oldterr=players.get(currentPlayer).getNumTerritories();
+
+			reinforce();
+
+			return true;
+		}
+		else if(players.get(currentPlayer).getNumTerritories()==41)
+			return false;
+
+		return nextPlaying();
+	}
+
+	public int getNumPlayers() {
+		return players.size();
+	}
+
+	public boolean startGame() {
+
+		if(getNumPlayers()<2)
+			return false;
+
+		for(Player p: players) 
+			p.addArmies(40-(getNumPlayers()-2)*5);
+
+		return true;
 	}
 
 	public static Board getInstance()
