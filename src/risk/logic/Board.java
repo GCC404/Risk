@@ -11,9 +11,9 @@ public class Board
 {
 	private static Board instance;
 	private ArrayList<Player> players=new ArrayList<Player>();
-	private int currentPlayer, oldterr=-1;
+	private int currentPlayer, oldterr=60;
 	private Map<String,Territory> territories=new HashMap<String,Territory>();
-	private Stack<Card> deck=new Stack<Card>();
+	private Stack<Card> deck=new Stack<Card>(), stash=new Stack<Card>();
 
 	private Board()
 	{
@@ -57,15 +57,15 @@ public class Board
 		deck.push(new Card("Afghanistan",1));
 		deck.push(new Card("China",5));
 		deck.push(new Card("India",5));
-		deck.push(new Card("Irkutsk",5));
+		deck.push(new Card("Irkutsh",5));
 		deck.push(new Card("Japan",10));
-		deck.push(new Card("Kamchatka",10));
+		deck.push(new Card("Kamohatka",10));
 		deck.push(new Card("Middle East",1));
 		deck.push(new Card("Mongolia",1));
 		deck.push(new Card("Siam",10));
 		deck.push(new Card("Siberia",5));
 		deck.push(new Card("Ural",1));
-		deck.push(new Card("Yakutsk",5));
+		deck.push(new Card("Yakutsh",5));
 		
 		deck.push(new Card("Eastern Australia",5));
 		deck.push(new Card("Indonesia",1));
@@ -199,6 +199,7 @@ public class Board
 		players.get(currentPlayer).occupy(territories.get(territory));
 	}
 
+	@SuppressWarnings("unchecked")
 	public void randomOccupy() {
 
 		int occupying=0;
@@ -209,10 +210,15 @@ public class Board
 			if(occupying==-1 || occupying==players.size()-1)
 				occupying=0;
 			else occupying+=1;
-
+			
 			territories.get(drawn.getTerritory()).occupy(occupying, drawn.getArmies());
 			players.get(occupying).occupy(territories.get(drawn.getTerritory()));
+			stash.push(drawn);
 		}
+		
+		deck=(Stack<Card>) stash.clone();
+		stash.clear();
+		Collections.shuffle(deck);
 	}
 
 	public Card getCard() {
@@ -231,43 +237,37 @@ public class Board
 		if(!checkIfConnected(origin, target))
 			return false;
 
-
-
 		int maxatck=0, maxdefend=0, roll;
 
-		for(int i=0; i<(territories.get(origin).getArmies())%4-1; i++) {
-			roll=Generator.nextInt(6)+1;
-
+		for(int i=0; i<Math.min(3,territories.get(origin).getArmies()-1); i++) {
+			roll=Generator.nextInt(6);
+			
 			if(roll>maxatck)
 				maxatck=roll;
 		}
 
-		for(int i=0; i<(territories.get(target).getArmies())%3-1; i++) {
-			roll=Generator.nextInt(6)+1;
+		for(int i=0; i<Math.min(2,territories.get(target).getArmies()); i++) {
+			roll=Generator.nextInt(6);
 
 			if(roll>maxdefend)
-				maxatck=roll;
+				maxdefend=roll;
 		}
 
-
-
 		if(maxatck>maxdefend) {
-
-			if(territories.get(target).removeArmies(-1)) {
-				occupy(target,(territories.get(origin).getArmies())%4-1);
-
+			
+			if(territories.get(target).removeArmies(1)) {
+				occupy(target,Math.min(territories.get(origin).getArmies()-1,3));
+				territories.get(origin).removeArmies(Math.min(territories.get(origin).getArmies()-1,3));
 				if(players.get(territories.get(target).getOwner()).getNumTerritories()==0) {
 					Card[] cards=players.get(territories.get(target).getOwner()).removeCards(null);
 
 					for(Card card: cards)
 						players.get(currentPlayer).addCard(card);
-
-
 				}
 			}
 
 
-		} else territories.get(origin).removeArmies(-1);
+		} else territories.get(origin).removeArmies(1);
 
 
 
@@ -314,7 +314,7 @@ public class Board
 		if(currentPlayer==-1 || currentPlayer==players.size()-1)
 			currentPlayer=0;
 		else currentPlayer+=1;
-
+		
 		return true;
 	}
 
