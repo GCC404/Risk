@@ -23,6 +23,10 @@ public class Board
 		Collections.shuffle(deck);
 	}
 
+	public Map<String,Territory> aa() {
+		return territories;
+	}
+	
 	private void initDeck() {
 		deck.push(new Card("Alaska",10));
 		deck.push(new Card("Alberta",1));
@@ -174,6 +178,14 @@ public class Board
 	public Player getPlayer() {
 		return players.get(currentPlayer);
 	}
+	
+	public String getPlayerColor(int id) {
+		if(id<0)
+			return "";
+		
+		System.out.print(players.get(id).getColor());
+		return players.get(id).getColor();
+	}
 
 	public int getCardNr() {
 		return players.get(currentPlayer).getCardNr();
@@ -183,7 +195,7 @@ public class Board
 		return deck.size();
 	}
 
-	ArrayList<Card> getCards() {
+	public ArrayList<Card> getCards() {
 		if(getCardNr()>=5)
 			players.get(currentPlayer).redeem();
 
@@ -335,7 +347,7 @@ public class Board
 
 	public static Board getInstance()
 	{
-		//if (instance == null)
+		if (instance == null)
 			instance = new Board();
 
 		return instance;
