@@ -22,10 +22,6 @@ public class Board
 		initDeck();
 		Collections.shuffle(deck);
 	}
-
-	public Map<String,Territory> aa() {
-		return territories;
-	}
 	
 	private void initDeck() {
 		deck.push(new Card("Alaska",10));
@@ -179,12 +175,8 @@ public class Board
 		return players.get(currentPlayer);
 	}
 	
-	public String getPlayerColor(int id) {
-		if(id<0)
-			return "";
-		
-		System.out.print(players.get(id).getColor());
-		return players.get(id).getColor();
+	public String getTerrColor(String territory) {
+		return players.get(territories.get(territory).getOwner()).getColor();
 	}
 
 	public int getCardNr() {
@@ -246,7 +238,8 @@ public class Board
 	}
 
 	public boolean attack(String origin, String target) {
-		if(!checkIfConnected(origin, target))
+		if(!checkIfConnected(origin, target) || territories.get(origin).getOwner()!=currentPlayer ||
+				territories.get(target).getOwner()==currentPlayer || territories.get(origin).getArmies()<2)
 			return false;
 
 		int maxatck=0, maxdefend=0, roll;

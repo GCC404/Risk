@@ -29,23 +29,48 @@ public class Map extends JPanel {
 	private ArrayList<JLabel> labels=new ArrayList<JLabel>();
 	private HashMap<String, Territory> territories=new HashMap<String,Territory>();
 	private Board board=Board.getInstance();
+	private boolean chosingOrigin=true;
+	private String origin="", target="";
 	/**
 	 * Create the panel.
 	 */
 	public Map() {
+		
+		setLayout(null);
+		setBounds(0, 0, 1380, 748);
+		final JLabel lblOrigin = new JLabel("Origin:");
+		lblOrigin.setBounds(386, 677, 241, 14);
+		add(lblOrigin);
+		
+		final JLabel lblTarget = new JLabel("Target:");
+		lblTarget.setBounds(386, 702, 221, 14);
+		add(lblTarget);
+
 		addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
 				System.out.println(arg0.getPoint().getX()+" "+arg0.getPoint().getY());
 				for(int i=0; i<squares.size(); i++)
 					if(squares.get(i).contains(arg0.getPoint())) {
-						repaint();
+						System.out.println(terrnames.get(i));
+						
+						if(chosingOrigin) {
+							origin=terrnames.get(i);
+							lblOrigin.setText("Origin: "+terrnames.get(i));
+						}
+						else {
+							target=terrnames.get(i);
+							lblTarget.setText("Target: "+terrnames.get(i));
+						}
+				
+						chosingOrigin=!chosingOrigin;
 						return;
 					}
+				
+				repaint();
 			}
 		});
-		setLayout(null);
-
+		
 		try {
 			background=ImageIO.read(new File("background.png"));
 		} catch (IOException e) {
@@ -97,7 +122,6 @@ public class Map extends JPanel {
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		g.drawImage(background, 0, 0, this.getWidth(), this.getHeight(), this);
-		territories=(HashMap<String, Territory>) board.aa();
 		drawSquares(g);
 	}
 	
@@ -107,14 +131,13 @@ public class Map extends JPanel {
 		for(int i=0; i<squares.size(); i++) {
 			g2d.setColor(choseColor(i));
 			g2d.fill(squares.get(i));
-			labels.get(i).setText(territories.get(terrnames.get(i)).getArmies()+"");
+			labels.get(i).setText(board.getTerrArmies(terrnames.get(i))+"");
 			g2d.draw(squares.get(i));
 		}
 	}
 
 	private Color choseColor(int i) {
-		
-		switch(board.getPlayerColor(territories.get(terrnames.get(i)).getOwner())) {
+		switch(board.getTerrColor(terrnames.get(i))) {
 		case "Pink":
 			return Color.pink;
 		case "Yellow":
@@ -131,4 +154,13 @@ public class Map extends JPanel {
 			return Color.WHITE;
 		}
 	}
+
+	public String getOrigin() {
+		return origin;
+	}
+	
+	public String getTarget() {
+		return target;
+	}
+	
 }

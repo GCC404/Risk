@@ -1,6 +1,7 @@
 package risk.gui;
 
 import java.awt.EventQueue;
+import java.awt.Window;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -21,7 +22,9 @@ import java.util.ArrayList;
 public class GameWindow extends JFrame {
 
 	private JPanel contentPane;
+	private InvalidMove invalidMove=new InvalidMove();
 	private Board board=Board.getInstance();
+	private boolean fortifyPhase=false;
 
 	/**
 	 * Launch the application.
@@ -51,23 +54,23 @@ public class GameWindow extends JFrame {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
-		
-		Map map = new Map();
+
+		final Map map = new Map();
 		map.setBounds(10, 11, 1380, 748);
 		contentPane.add(map);
-		
+
 		final Cards cards = new Cards();
-		cards.setBounds(10, 770, 320, 140);
+		cards.setBounds(10, 770, 300, 140);
 		contentPane.add(cards);
-		
+
 		JPanel panel_2 = new JPanel();
 		panel_2.setBounds(639, 790, 751, 110);
 		contentPane.add(panel_2);
 		panel_2.setLayout(new GridLayout(0, 6, 0, 0));
-		
+
 		final JLabel lblCurrentlyPlaying = new JLabel("Currently playing:");
 		panel_2.add(lblCurrentlyPlaying);
-		
+
 		//TODO tirar isto
 		Player t=new Player("Pink",true);	
 		board.addPlayer(t);
@@ -75,34 +78,50 @@ public class GameWindow extends JFrame {
 		for(int i=0; i<colors.size(); i++)
 			board.addPlayer(new Player(colors.get(i),true));
 		t.addCard(new Card("Alaska",1));
+		t.addCard(new Card("Alaska",5));
+		t.addCard(new Card("Alaska",10));
+		t.addCard(new Card("Alaska",10));
 		board.randomOccupy();
-		
+
 		cards.setCards(board.getCards());
 		board.startGame();
 		//map.setMap((HashMap<String, Territory>) board.aa());
-		
+
 		final JLabel lblNewLabel = new JLabel(board.getPlayer().getColor());
 		panel_2.add(lblNewLabel);
-		
+
 		JButton btnNextTurn = new JButton("Next Turn");
-		btnNextTurn.addMouseListener(new MouseAdapter() {
+		
+		panel_2.add(btnNextTurn);
+
+		JButton btnFortify = new JButton("Fortify");
+		
+		panel_2.add(btnFortify);
+
+		final JButton btnAttack = new JButton("Attack");
+		btnAttack.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				board.nextPlaying();
-				cards.setCards(board.getCards());
-				lblNewLabel.setText(board.getPlayer().getColor());
-				
-				repaint();
+
+				if(!fortifyPhase) {
+					if(board.attack(map.getOrigin(), map.getTarget()))
+						repaint();
+					else invalidMove.setVisible(true);
+				} else {
+					if(board.move(map.getOrigin(), map.getTarget(),1))
+						repaint();
+					else invalidMove.setVisible(true);
+				}
 			}
 		});
-		panel_2.add(btnNextTurn);
-		
-		JButton btnFortify = new JButton("Fortify");
-		panel_2.add(btnFortify);
-		
-		JButton btnLoadGame = new JButton("Save Game");
-		panel_2.add(btnLoadGame);
-		
+		btnFortify.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				fortifyPhase=true;
+			}
+		});
+		panel_2.add(btnAttack);
+
 		JButton btnNewButton = new JButton("Exit");
 		btnNewButton.addMouseListener(new MouseAdapter() {
 			@Override
@@ -110,6 +129,19 @@ public class GameWindow extends JFrame {
 				System.exit(0);
 			}
 		});
+		
+		btnNextTurn.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				board.nextPlaying();
+				cards.setCards(board.getCards());
+				lblNewLabel.setText(board.getPlayer().getColor());
+				fortifyPhase=false;
+
+				repaint();
+			}
+		});
+		
 		panel_2.add(btnNewButton);
 	}
 }
