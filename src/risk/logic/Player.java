@@ -77,7 +77,7 @@ public class Player {
 				cards.remove(c);
 	}
 
-	public void redeem() {
+	public boolean redeem() {
 		int c1=0, c2=0, c3=0;
 		Card i1=null, i2=null, i3=null;
 
@@ -101,11 +101,12 @@ public class Player {
 			}
 
 		if(c1>0 && c2>0 && c3>0) {
+			
 			cards.remove(i1);
 			cards.remove(i2);
 			cards.remove(i3);
 
-			return;
+			return true;
 		}
 
 		if(c1>=3) {
@@ -114,7 +115,7 @@ public class Player {
 					cards.remove(c);
 					c1--;
 					if(c1==0)
-						return;
+						return true;
 				}
 		}
 
@@ -124,7 +125,7 @@ public class Player {
 					cards.remove(c);
 					c2--;
 					if(c2==0)
-						return;
+						return true;
 				}
 		}
 
@@ -133,9 +134,10 @@ public class Player {
 				cards.remove(c);
 				c3--;
 				if(c3==0)
-					return;
+					return true;
 			}
 
+		return false;
 	}
 
 	public ArrayList<Card> getCards() {

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
+import risk.logic.Board;
 import risk.logic.Card;
 import javax.swing.JLabel;
 
@@ -16,7 +17,9 @@ import javax.swing.JLabel;
 public class Cards extends JPanel {
 
 	private ArrayList<Card> cards=new ArrayList<Card>();
+	private ArrayList<JLabel> labels=new ArrayList<JLabel>();
 	private BufferedImage cannon, soldier, horse;
+	private Board board=Board.getInstance();
 	/**
 	 * Create the panel.
 	 */
@@ -33,20 +36,24 @@ public class Cards extends JPanel {
 		setLayout(null);
 		
 		JLabel lblCard = new JLabel("");
-		lblCard.setBounds(20, 100, 46, 14);
+		lblCard.setBounds(15, 100, 46, 14);
 		add(lblCard);
+		labels.add(lblCard);
 		
-		JLabel lblCard_1 = new JLabel("Card2");
-		lblCard_1.setBounds(90, 100, 46, 14);
-		add(lblCard_1);
+		lblCard = new JLabel("");
+		lblCard.setBounds(85, 100, 46, 14);
+		add(lblCard);
+		labels.add(lblCard);
 		
-		JLabel lblCard_2 = new JLabel("Card2");
-		lblCard_2.setBounds(160, 100, 46, 14);
-		add(lblCard_2);
+		lblCard = new JLabel("");
+		lblCard.setBounds(155, 100, 46, 14);
+		add(lblCard);
+		labels.add(lblCard);
 		
-		JLabel lblCard_3 = new JLabel("Card3");
-		lblCard_3.setBounds(230, 100, 46, 14);
-		add(lblCard_3);
+		lblCard = new JLabel("");
+		lblCard.setBounds(225, 100, 46, 14);
+		add(lblCard);
+		labels.add(lblCard);
 		
 		repaint();
 	}
@@ -55,10 +62,14 @@ public class Cards extends JPanel {
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		
+		cards=board.getCards();
 		int x=0;
 		final int width=70, height=140;
 		
 		g.clearRect(0, 0, width*5, height);
+		for(JLabel label: labels)
+			label.setText("");
+		
 		for(int i=0; i<cards.size(); i++) {
 			switch(cards.get(i).getArmies()) {
 			case 1:
@@ -71,12 +82,9 @@ public class Cards extends JPanel {
 				g.drawImage(cannon, x*width, 0, width, height, null);
 				break;
 			}
+			labels.get(i).setText(cards.get(i).getTerritory());
 			
 			x++;
 		}
-	}
-	
-	public void setCards(ArrayList<Card> cards) {
-		this.cards=cards;
 	}
 }
