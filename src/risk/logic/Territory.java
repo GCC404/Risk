@@ -1,9 +1,10 @@
 package risk.logic;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 
-public class Territory {
+public class Territory implements Serializable {
 	private int armies=0, playerId=-1;
 	private String name, continent;
 	private String[] adjacent; 

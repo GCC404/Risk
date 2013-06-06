@@ -1,6 +1,8 @@
 package risk.logic;
 
-public class Card {
+import java.io.Serializable;
+
+public class Card implements Serializable {
 	private String territory;
 	private int armies;
 	

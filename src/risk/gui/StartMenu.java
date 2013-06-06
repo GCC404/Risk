@@ -8,6 +8,9 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.ImageIcon;
 
+import risk.logic.Board;
+import risk.logic.Player;
+
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -17,6 +20,7 @@ public class StartMenu {
 	private JFrame frame;
 	private AddPlayer addplayer=new AddPlayer();
 	private GameWindow gamewindow;
+	private Board board=Board.getInstance();
 
 	/**
 	 * Launch the application.
@@ -68,6 +72,12 @@ public class StartMenu {
 			public void mouseClicked(MouseEvent e) {
 				ArrayList<String> colors=addplayer.getColors();
 				System.out.println(colors);
+				
+				for(String color: colors)
+					if(!board.addPlayer(new Player(color,true))) {
+						System.out.println(color+" ja existe");
+						colors.remove(color);
+					}
 				
 				gamewindow=new GameWindow(colors);
 				gamewindow.setVisible(true);

@@ -1,4 +1,6 @@
 package risk.logic;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -7,11 +9,12 @@ import java.util.Stack;
 
 import risk.generator.Generator;
 
-public class Board
+public class Board implements Serializable
 {
 	private static Board instance;
 	private ArrayList<Player> players=new ArrayList<Player>();
 	private int currentPlayer, oldterr=60, reinforcements=4;
+	private boolean gamestarted=false;
 	private Map<String,Territory> territories=new HashMap<String,Territory>();
 	private Stack<Card> deck=new Stack<Card>(), stash=new Stack<Card>();
 
@@ -22,7 +25,7 @@ public class Board
 		initDeck();
 		Collections.shuffle(deck);
 	}
-	
+
 	private void initDeck() {
 		deck.push(new Card("Alaska",10));
 		deck.push(new Card("Alberta",1));
@@ -33,12 +36,12 @@ public class Board
 		deck.push(new Card("Ontario",5));
 		deck.push(new Card("Quebec",10));
 		deck.push(new Card("Western United States",1));
-		
+
 		deck.push(new Card("Argentina",5));
 		deck.push(new Card("Brazil",5));
 		deck.push(new Card("Peru",10));
 		deck.push(new Card("Venezuela",1));
-		
+
 		deck.push(new Card("Great Britain",10));
 		deck.push(new Card("Iceland",10));
 		deck.push(new Card("Northern Europe",5));
@@ -46,14 +49,14 @@ public class Board
 		deck.push(new Card("Southern Europe",1));
 		deck.push(new Card("Ukraine",5));
 		deck.push(new Card("Western Europe",1));
-		
+
 		deck.push(new Card("Congo",5));
 		deck.push(new Card("East Africa",10));
 		deck.push(new Card("Egypt",5));
 		deck.push(new Card("Madagascar",10));
 		deck.push(new Card("North Africa",1));
 		deck.push(new Card("South Africa",1));
-		
+
 		deck.push(new Card("Afghanistan",1));
 		deck.push(new Card("China",5));
 		deck.push(new Card("India",5));
@@ -66,7 +69,7 @@ public class Board
 		deck.push(new Card("Siberia",5));
 		deck.push(new Card("Ural",1));
 		deck.push(new Card("Yakutsk",5));
-		
+
 		deck.push(new Card("Eastern Australia",5));
 		deck.push(new Card("Indonesia",1));
 		deck.push(new Card("New Guinea",10));
@@ -171,10 +174,14 @@ public class Board
 		return nr;
 	}
 
-	public Player getPlayer() {
-		return players.get(currentPlayer);
+	public int getPlayerArmies() {
+		return players.get(currentPlayer).getArmies();
 	}
-	
+
+	public String getPlayerColor() {
+		return players.get(currentPlayer).getColor();
+	}
+
 	public String getTerrColor(String territory) {
 		try {
 			return players.get(territories.get(territory).getOwner()).getColor();
@@ -186,7 +193,7 @@ public class Board
 	public int getCardNr() {
 		return players.get(currentPlayer).getCardNr();
 	}
-	
+
 	public int getCardsInDeck() {
 		return deck.size();
 	}
@@ -194,21 +201,21 @@ public class Board
 	public ArrayList<Card> getCards() {
 		if(players.size()<1)
 			return new ArrayList<Card>();
-		
+
 		if(getCardNr()>=5)
 			players.get(currentPlayer).redeem();
 
 		return players.get(currentPlayer).getCards();
 	}
-	
+
 	public boolean redeem() {
 		if(players.get(currentPlayer).redeem()) {
 			players.get(currentPlayer).addArmies(reinforcements);
 			advanceGolden();
-			
+
 			return true;
 		}
-		
+
 		return false;
 	}
 
@@ -220,8 +227,9 @@ public class Board
 		else reinforcements+=5;
 	}
 
-	private void occupy(String territory,int armies) {
+	public void occupy(String territory,int armies) {
 		territories.get(territory).occupy(currentPlayer, armies);
+		System.out.println(players.get(currentPlayer).getColor()+" "+territory);
 		players.get(currentPlayer).occupy(territories.get(territory));
 	}
 
@@ -236,17 +244,31 @@ public class Board
 			if(occupying==-1 || occupying==players.size()-1)
 				occupying=0;
 			else occupying+=1;
-			
+
 			territories.get(drawn.getTerritory()).occupy(occupying, 1);
 			players.get(occupying).occupy(territories.get(drawn.getTerritory()));
 			players.get(occupying).addArmies(-1);
-			
+
 			stash.push(drawn);
 		}
-		
+
 		deck=(Stack<Card>) stash.clone();
 		stash.clear();
 		Collections.shuffle(deck);
+	}
+	
+	public boolean pickOccupy(String territory) {
+		if(territories.get(territory).getOwner()!=-1)
+			return false;
+		
+		players.get(currentPlayer).occupy(territories.get(territory));
+		players.get(currentPlayer).addArmies(-1);
+		
+		if(currentPlayer==-1 || currentPlayer==players.size()-1)
+			currentPlayer=0;
+		else currentPlayer+=1;
+		
+		return true;
 	}
 
 	public Card getCard() {
@@ -264,7 +286,7 @@ public class Board
 	public boolean attack(String origin, String target) {
 		if(origin=="" || target=="")
 			return false;
-		
+
 		if(!checkIfConnected(origin, target) || territories.get(origin).getOwner()!=currentPlayer ||
 				territories.get(target).getOwner()==currentPlayer || territories.get(origin).getArmies()<2)
 			return false;
@@ -273,7 +295,7 @@ public class Board
 
 		for(int i=0; i<Math.min(3,territories.get(origin).getArmies()-1); i++) {
 			roll=Generator.nextInt(6);
-			
+
 			if(roll>maxatck)
 				maxatck=roll;
 		}
@@ -286,7 +308,7 @@ public class Board
 		}
 
 		if(maxatck>maxdefend) {
-			
+
 			if(territories.get(target).removeArmies(1)) {
 				occupy(target,Math.min(territories.get(origin).getArmies()-1,3));
 				territories.get(origin).removeArmies(Math.min(territories.get(origin).getArmies()-1,3));
@@ -309,25 +331,25 @@ public class Board
 	private boolean checkIfConnected(String origin, String target) {
 		return territories.get(origin).checkIfConnected(target);
 	}
-	
+
 	public boolean reinforce(String territory, int armies) {
 		if(territory=="")
 			return false;
-		
+
 		if(territories.get(territory).getOwner()!=currentPlayer || armies>players.get(currentPlayer).getArmies())
 			return false;
-		
+
 		territories.get(territory).removeArmies(-armies);
 		players.get(currentPlayer).addArmies(-armies);
-		
+
 		return true;
 	}
 
 	public boolean move(String origin, String target, int armies) {
-		
+
 		if(origin=="" || target=="")
 			return false;
-		
+
 		if(!checkIfConnected(origin, target) || territories.get(origin).getOwner()!=currentPlayer ||
 				territories.get(target).getOwner()!=currentPlayer || armies>territories.get(origin).getArmies()-1)
 			return false;
@@ -339,23 +361,23 @@ public class Board
 	}
 
 	public boolean nextPlaying() {
-		
+
 		if(players.get(currentPlayer).getNumTerritories()==41 || players.get(currentPlayer).getArmies()>0)
 			return false;
 
 		if(players.get(currentPlayer).getNumTerritories()>0) {	
 			reinforce();
-			
+
 			if(players.get(currentPlayer).getNumTerritories()>oldterr)
 				players.get(currentPlayer).addCard(getCard());
-			
+
 			oldterr=players.get(currentPlayer).getNumTerritories();
 		}
 
 		if(currentPlayer==-1 || currentPlayer==players.size()-1)
 			currentPlayer=0;
 		else currentPlayer+=1;
-		
+
 		return true;
 	}
 
@@ -363,23 +385,40 @@ public class Board
 		return players.size();
 	}
 
-	public boolean startGame() {
+	public boolean isGameStarted() {
+		return gamestarted;
+	}
 
+	public boolean startGame() {
 		if(getNumPlayers()<2)
 			return false;
+		
+		for(Territory territory: territories.values())
+			if(territory.getOwner()==-1)
+				return false;			
 
 		for(Player p: players) 
 			p.addArmies(40-(getNumPlayers()-2)*5);
+
+		gamestarted=true;
 
 		return true;
 	}
 
 	public static Board getInstance()
 	{
-		if (instance == null)
+		if(instance == null)
 			instance = new Board();
 
 		return instance;
 	}
 
+	public static void resetInstance() {
+		instance=new Board();
+	}
+	
+	private Object readResolve() throws ObjectStreamException
+	{
+		return instance; 
+	}
 }

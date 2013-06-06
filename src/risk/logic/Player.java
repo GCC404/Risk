@@ -1,8 +1,9 @@
 package risk.logic;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Player {
+public class Player implements Serializable {
 
 	private List<Territory> territories=new ArrayList<Territory>();
 	private String color;

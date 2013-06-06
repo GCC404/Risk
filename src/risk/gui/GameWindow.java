@@ -26,6 +26,7 @@ public class GameWindow extends JFrame {
 	private JPanel contentPane;
 	private InvalidMove invalidMove=new InvalidMove();
 	private Board board=Board.getInstance();
+	private ArrayList<String> localPlayers;
 
 	/**
 	 * Launch the application.
@@ -47,21 +48,22 @@ public class GameWindow extends JFrame {
 	 * Create the frame.
 	 * @param colors 
 	 */
-	public GameWindow(ArrayList<String> colors) {
+	public GameWindow(final ArrayList<String> players) {
 
+		this.localPlayers=players;
 		//TODO tirar isto
 		Player t=new Player("Pink",true);	
 		board.addPlayer(t);
+		localPlayers.add(t.getColor());
 		board.addPlayer(new Player("Red",true));
-		for(int i=0; i<colors.size(); i++)
-			board.addPlayer(new Player(colors.get(i),true));
+		localPlayers.add("Red");
 		t.addCard(new Card("Alaska",1));
 		t.addCard(new Card("Australia",5));
 		t.addCard(new Card("Brazil",10));
 		t.addCard(new Card("Peru",10));
 		
-		board.randomOccupy();
-		board.startGame();
+		//board.randomOccupy();
+		//board.startGame();
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 1450, 950);
@@ -93,7 +95,7 @@ public class GameWindow extends JFrame {
 		lblCurrentlyPlaying.setBounds(10, 11, 105, 14);
 		panel.add(lblCurrentlyPlaying);
 
-		final JLabel lblCurrentlyPlaying2 = new JLabel(board.getPlayer().getColor());
+		final JLabel lblCurrentlyPlaying2 = new JLabel(board.getPlayerColor());
 		lblCurrentlyPlaying2.setBounds(10, 28, 55, 14);
 		panel.add(lblCurrentlyPlaying2);
 
@@ -101,9 +103,12 @@ public class GameWindow extends JFrame {
 		lblArmies1.setBounds(10, 73, 55, 14);
 		panel.add(lblArmies1);
 
-		final JLabel lblArmies2 = new JLabel(board.getPlayer().getArmies()+"");
+		final JLabel lblArmies2 = new JLabel(board.getPlayerArmies()+"");
 		lblArmies2.setBounds(87, 73, 28, 14);
 		panel.add(lblArmies2);
+		
+		final JButton btnStartGame = new JButton("Start Game");
+		panel_2.add(btnStartGame);
 
 		JButton btnRedeem = new JButton("Redeem cards");
 
@@ -115,35 +120,6 @@ public class GameWindow extends JFrame {
 
 		final JButton btnAction = new JButton("Reinforce");
 		
-		btnPhase.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				switch(btnAction.getText()) {
-				case "Attack":
-					btnAction.setText("Fortify");
-					break;
-				case "Reinforce":
-					if(board.getPlayer().getArmies()>0) {
-						invalidMove.setVisible(true);
-						return;
-					}				
-					btnAction.setText("Attack");
-					break;
-				case "Fortify":
-					if(!board.nextPlaying()) {
-						invalidMove.setVisible(true);
-						return;
-					}
-					
-					lblCurrentlyPlaying2.setText(board.getPlayer().getColor());
-					lblArmies2.setText(board.getPlayer().getArmies()+"");
-					btnAction.setText("Reinforce");
-
-					repaint();
-					break;
-				}
-			}
-		});
 		panel_2.add(btnAction);
 
 		JButton btnNewButton = new JButton("Exit");
@@ -157,8 +133,7 @@ public class GameWindow extends JFrame {
 		btnRedeem.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				
-				if(btnPhase.getText()!="Reinforce") {
+				if(!localPlayers.contains(board.getPlayerColor())) {
 					invalidMove.setVisible(true);
 					return;
 				}
@@ -168,7 +143,7 @@ public class GameWindow extends JFrame {
 					return;
 				}
 				
-				lblArmies2.setText(board.getPlayer().getArmies()+"");
+				lblArmies2.setText(board.getPlayerArmies()+"");
 				repaint();
 			}
 		});
@@ -177,7 +152,7 @@ public class GameWindow extends JFrame {
 		
 		final JSlider slider = new JSlider();
 		slider.setMaximum(30);
-		final JLabel lblSlider = new JLabel(slider.getValue()+"");
+		final JLabel lblSlider = new JLabel(board.getPlayerArmies()+"");
 		
 		slider.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent arg0) {
@@ -187,7 +162,7 @@ public class GameWindow extends JFrame {
 		slider.setSnapToTicks(true);
 		slider.setPaintLabels(true);
 		slider.setPaintTicks(true);
-		slider.setValue(0);
+		slider.setValue(board.getPlayerArmies());
 		slider.setBounds(320, 790, 200, 26);
 		contentPane.add(slider);
 		
@@ -197,6 +172,12 @@ public class GameWindow extends JFrame {
 		btnAction.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
+				
+				if(!localPlayers.contains(board.getPlayerColor())) {
+					invalidMove.setVisible(true);
+					return;
+				}
+				
 				switch(btnAction.getText()) {
 				case "Attack":
 					if(board.attack(map.getOrigin(), map.getTarget()))
@@ -206,7 +187,7 @@ public class GameWindow extends JFrame {
 					break;
 				case "Reinforce":					
 					if(board.reinforce(map.getOrigin(),slider.getValue())) {
-						lblArmies2.setText(board.getPlayer().getArmies()+"");
+						lblArmies2.setText(board.getPlayerArmies()+"");
 						repaint();
 					}
 					else invalidMove.setVisible(true);
@@ -220,6 +201,64 @@ public class GameWindow extends JFrame {
 					break;
 				}
 
+			}
+		});
+		
+		btnStartGame.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				
+				if(!localPlayers.contains(board.getPlayerColor()) || board.isGameStarted()) {
+					invalidMove.setVisible(true);
+					return;
+				}
+				
+				board.randomOccupy();
+				if(!board.startGame()) {
+					invalidMove.setVisible(true);
+					return;
+				}
+				
+				btnStartGame.setVisible(false);
+				map.repaint();
+				lblArmies2.setText(board.getPlayerArmies()+"");
+			}
+		});
+		
+		btnPhase.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				
+				if(!localPlayers.contains(board.getPlayerColor())) {
+					invalidMove.setVisible(true);
+					return;
+				}
+				
+				switch(btnAction.getText()) {
+				case "Attack":
+					btnAction.setText("Fortify");
+					break;
+				case "Reinforce":
+					if(board.getPlayerArmies()>0) {
+						invalidMove.setVisible(true);
+						return;
+					}				
+					btnAction.setText("Attack");
+					break;
+				case "Fortify":
+					if(!board.nextPlaying()) {
+						invalidMove.setVisible(true);
+						return;
+					}
+					
+					lblCurrentlyPlaying2.setText(board.getPlayerColor());
+					lblArmies2.setText(board.getPlayerArmies()+"");
+					slider.setValue(board.getPlayerArmies());
+					btnAction.setText("Reinforce");
+
+					repaint();
+					break;
+				}
 			}
 		});
 	}
