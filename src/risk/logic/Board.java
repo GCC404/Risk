@@ -227,9 +227,8 @@ public class Board implements Serializable
 		else reinforcements+=5;
 	}
 
-	public void occupy(String territory,int armies) {
+	private void occupy(String territory,int armies) {
 		territories.get(territory).occupy(currentPlayer, armies);
-		System.out.println(players.get(currentPlayer).getColor()+" "+territory);
 		players.get(currentPlayer).occupy(territories.get(territory));
 	}
 
@@ -261,8 +260,7 @@ public class Board implements Serializable
 		if(territories.get(territory).getOwner()!=-1)
 			return false;
 		
-		players.get(currentPlayer).occupy(territories.get(territory));
-		players.get(currentPlayer).addArmies(-1);
+		occupy(territory,1);
 		
 		if(currentPlayer==-1 || currentPlayer==players.size()-1)
 			currentPlayer=0;

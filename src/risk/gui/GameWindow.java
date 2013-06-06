@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 @SuppressWarnings("serial")
 public class GameWindow extends JFrame {
@@ -61,7 +63,7 @@ public class GameWindow extends JFrame {
 		t.addCard(new Card("Australia",5));
 		t.addCard(new Card("Brazil",10));
 		t.addCard(new Card("Peru",10));
-		
+
 		//board.randomOccupy();
 		//board.startGame();
 
@@ -74,7 +76,7 @@ public class GameWindow extends JFrame {
 		contentPane.setLayout(null);
 
 		final Map map = new Map();
-		
+
 		map.setBounds(10, 11, 1380, 748);
 		contentPane.add(map);
 
@@ -86,6 +88,45 @@ public class GameWindow extends JFrame {
 		panel_2.setBounds(639, 790, 751, 110);
 		contentPane.add(panel_2);
 		panel_2.setLayout(new GridLayout(0, 6, 0, 0));
+
+		final JButton btnStartGame = new JButton("Start Game");
+		panel_2.add(btnStartGame);
+
+		final JButton btnRandomOccupy = new JButton("Random Occupy");
+
+		panel_2.add(btnRandomOccupy);
+
+		final JButton btnPickTerritory = new JButton("Pick Territory");
+
+		panel_2.add(btnPickTerritory);
+
+		final JButton btnRedeem = new JButton("Redeem cards");
+
+		panel_2.add(btnRedeem);
+
+		final JButton btnPhase = new JButton("Next phase");
+
+		panel_2.add(btnPhase);
+
+		btnRedeem.setVisible(false);
+		btnPhase.setVisible(false);
+
+		JButton btnNewButton = new JButton("Exit");
+		btnNewButton.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				System.exit(0);
+			}
+		});
+
+		
+
+		final JButton btnAction = new JButton("Reinforce");
+
+		panel_2.add(btnAction);
+		btnAction.setVisible(false);
+
+		panel_2.add(btnNewButton);
 
 		JPanel panel = new JPanel();
 		panel_2.add(panel);
@@ -99,61 +140,22 @@ public class GameWindow extends JFrame {
 		lblCurrentlyPlaying2.setBounds(10, 28, 55, 14);
 		panel.add(lblCurrentlyPlaying2);
 
+		JPanel panel_1 = new JPanel();
+		panel_2.add(panel_1);
+		panel_1.setLayout(null);
+
 		JLabel lblArmies1 = new JLabel("Armies:");
-		lblArmies1.setBounds(10, 73, 55, 14);
-		panel.add(lblArmies1);
+		lblArmies1.setBounds(10, 11, 59, 14);
+		panel_1.add(lblArmies1);
 
 		final JLabel lblArmies2 = new JLabel(board.getPlayerArmies()+"");
-		lblArmies2.setBounds(87, 73, 28, 14);
-		panel.add(lblArmies2);
-		
-		final JButton btnStartGame = new JButton("Start Game");
-		panel_2.add(btnStartGame);
+		lblArmies2.setBounds(10, 30, 105, 14);
+		panel_1.add(lblArmies2);
 
-		JButton btnRedeem = new JButton("Redeem cards");
-
-		panel_2.add(btnRedeem);
-
-		final JButton btnPhase = new JButton("Next phase");
-
-		panel_2.add(btnPhase);
-
-		final JButton btnAction = new JButton("Reinforce");
-		
-		panel_2.add(btnAction);
-
-		JButton btnNewButton = new JButton("Exit");
-		btnNewButton.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
-				System.exit(0);
-			}
-		});
-
-		btnRedeem.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				if(!localPlayers.contains(board.getPlayerColor())) {
-					invalidMove.setVisible(true);
-					return;
-				}
-				
-				if(!board.redeem()) {
-					invalidMove.setVisible(true);
-					return;
-				}
-				
-				lblArmies2.setText(board.getPlayerArmies()+"");
-				repaint();
-			}
-		});
-
-		panel_2.add(btnNewButton);
-		
 		final JSlider slider = new JSlider();
 		slider.setMaximum(30);
 		final JLabel lblSlider = new JLabel(board.getPlayerArmies()+"");
-		
+
 		slider.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent arg0) {
 				lblSlider.setText(slider.getValue()+"");
@@ -165,75 +167,44 @@ public class GameWindow extends JFrame {
 		slider.setValue(board.getPlayerArmies());
 		slider.setBounds(320, 790, 200, 26);
 		contentPane.add(slider);
-		
+
 		lblSlider.setBounds(530, 790, 46, 14);
 		contentPane.add(lblSlider);
-		
-		btnAction.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				
-				if(!localPlayers.contains(board.getPlayerColor())) {
-					invalidMove.setVisible(true);
-					return;
-				}
-				
-				switch(btnAction.getText()) {
-				case "Attack":
-					if(board.attack(map.getOrigin(), map.getTarget()))
-						repaint();
-					else invalidMove.setVisible(true);		
-					
-					break;
-				case "Reinforce":					
-					if(board.reinforce(map.getOrigin(),slider.getValue())) {
-						lblArmies2.setText(board.getPlayerArmies()+"");
-						repaint();
-					}
-					else invalidMove.setVisible(true);
-					
-					break;
-				case "Fortify":					
-					if(board.move(map.getOrigin(), map.getTarget(),2))
-						repaint();
-					else invalidMove.setVisible(true);
-					
-					break;
-				}
 
-			}
-		});
-		
 		btnStartGame.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
-				
+
 				if(!localPlayers.contains(board.getPlayerColor()) || board.isGameStarted()) {
 					invalidMove.setVisible(true);
 					return;
 				}
-				
-				board.randomOccupy();
+
+				//board.randomOccupy();
 				if(!board.startGame()) {
 					invalidMove.setVisible(true);
 					return;
 				}
-				
+
+				btnRedeem.setVisible(true);
+				btnPhase.setVisible(true);
+				btnAction.setVisible(true);
+				btnPickTerritory.setVisible(false);
 				btnStartGame.setVisible(false);
 				map.repaint();
 				lblArmies2.setText(board.getPlayerArmies()+"");
 			}
 		});
-		
+
 		btnPhase.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				
+
 				if(!localPlayers.contains(board.getPlayerColor())) {
 					invalidMove.setVisible(true);
 					return;
 				}
-				
+
 				switch(btnAction.getText()) {
 				case "Attack":
 					btnAction.setText("Fortify");
@@ -250,7 +221,7 @@ public class GameWindow extends JFrame {
 						invalidMove.setVisible(true);
 						return;
 					}
-					
+
 					lblCurrentlyPlaying2.setText(board.getPlayerColor());
 					lblArmies2.setText(board.getPlayerArmies()+"");
 					slider.setValue(board.getPlayerArmies());
@@ -259,6 +230,90 @@ public class GameWindow extends JFrame {
 					repaint();
 					break;
 				}
+			}
+		});
+
+		btnRandomOccupy.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				if(!localPlayers.contains(board.getPlayerColor())) {
+					invalidMove.setVisible(true);
+					return;
+				}
+
+				board.randomOccupy();
+				btnPickTerritory.setVisible(false);
+				btnRandomOccupy.setVisible(false);
+				repaint();
+			}
+		});
+		
+		btnRedeem.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if(!localPlayers.contains(board.getPlayerColor())) {
+					invalidMove.setVisible(true);
+					return;
+				}
+
+				if(!board.redeem()) {
+					invalidMove.setVisible(true);
+					return;
+				}
+
+				lblArmies2.setText(board.getPlayerArmies()+"");
+				repaint();
+			}
+		});
+
+		btnPickTerritory.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if(!localPlayers.contains(board.getPlayerColor())) {
+					invalidMove.setVisible(true);
+					return;
+				}
+
+				if(board.pickOccupy(map.getOrigin()))
+					repaint();
+				else invalidMove.setVisible(true);
+
+				btnRandomOccupy.setVisible(false);
+			}
+		});
+		
+		btnAction.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+
+				if(!localPlayers.contains(board.getPlayerColor())) {
+					invalidMove.setVisible(true);
+					return;
+				}
+
+				switch(btnAction.getText()) {
+				case "Attack":
+					if(board.attack(map.getOrigin(), map.getTarget()))
+						repaint();
+					else invalidMove.setVisible(true);		
+
+					break;
+				case "Reinforce":					
+					if(board.reinforce(map.getOrigin(),slider.getValue())) {
+						lblArmies2.setText(board.getPlayerArmies()+"");
+						repaint();
+					}
+					else invalidMove.setVisible(true);
+
+					break;
+				case "Fortify":					
+					if(board.move(map.getOrigin(), map.getTarget(),2))
+						repaint();
+					else invalidMove.setVisible(true);
+
+					break;
+				}
+
 			}
 		});
 	}
