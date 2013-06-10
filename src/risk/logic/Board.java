@@ -1,6 +1,6 @@
 package risk.logic;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -8,24 +8,41 @@ import java.util.Map;
 import java.util.Stack;
 
 import risk.generator.Generator;
+import risk.rmi.BoardInter;
+import risk.rmi.GUICallback;
 
-public class Board implements Serializable
+@SuppressWarnings("serial")
+public class Board extends UnicastRemoteObject implements BoardInter
 {
-	private static Board instance;
 	private ArrayList<Player> players=new ArrayList<Player>();
-	private int currentPlayer, oldterr=60, reinforcements=4;
-	private boolean gamestarted=false;
+	private int currentPlayer, reinforcements=4;
 	private Map<String,Territory> territories=new HashMap<String,Territory>();
 	private Stack<Card> deck=new Stack<Card>(), stash=new Stack<Card>();
+	private ArrayList<GUICallback> observers=new ArrayList<GUICallback>();
+	private boolean gamestarted=false;
 
-	private Board()
-	{
+	private void notifyObservers(String phase) {
+		for(GUICallback o: observers)
+			try {
+				o.notify(phase);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+	}
+
+	/**
+	 * Board constructor
+	 */
+	public Board() throws RemoteException {
 		currentPlayer=0;
 		initTerritories();
 		initDeck();
 		Collections.shuffle(deck);
 	}
 
+	/**
+	 * Initialize deck
+	 */
 	private void initDeck() {
 		deck.push(new Card("Alaska",10));
 		deck.push(new Card("Alberta",1));
@@ -76,8 +93,11 @@ public class Board implements Serializable
 		deck.push(new Card("Western Australia",1));
 	}
 
+	/**
+	 * Initialize territories
+	 */
 	private void initTerritories() {
-		territories.put("Alaska", new Territory("Alaska", "North America", "Alberta", "Northwest Territory", "Kamohatka"));
+		territories.put("Alaska", new Territory("Alaska", "North America", "Alberta", "Northwest Territory", "Kamchatka"));
 		territories.put("Alberta", new Territory("Alberta", "North America", "Alaska", "Northwest Territory", "Ontario", "Western United States"));
 		territories.put("Central America", new Territory("Central America", "North America", "Eastern United States", "Western United States", "Venezuela"));
 		territories.put("Eastern United States", new Territory("Eastern United States", "North America", "Central America", "Ontario", "Quebec", "Western United States", "Iceland"));
@@ -108,27 +128,149 @@ public class Board implements Serializable
 		territories.put("South Africa", new Territory("South Africa", "Africa", "Congo", "East Africa", "Madagascar"));
 
 		territories.put("Afghanistan", new Territory("Afghanistan", "Asia", "China", "India", "Middle East", "Ural", "Ukraine"));
-		territories.put("China", new Territory("China", "Asia", "Afghanistan", "India", "Mongolia", "Siam", "SIberia", "Ural"));
+		territories.put("China", new Territory("China", "Asia", "Afghanistan", "India", "Mongolia", "Siam", "Siberia", "Ural"));
 		territories.put("India", new Territory("India", "Asia", "Afghanistan", "China", "Middle East", "Siam"));
-		territories.put("Irkutsk", new Territory("Irkutsh", "Asia", "Kamohatka", "Mongolia", "Siberia", "Yakutsh"));
-		territories.put("Japan", new Territory("Japan", "Asia", "Kamohatka", "Mongolia"));
-		territories.put("Kamchatka", new Territory("Kamohatka", "Asia", "Irkutsh", "Japan", "Mongolia", "Yakutsh", "Alaska"));
+		territories.put("Irkutsk", new Territory("Irkutsk", "Asia", "Kamchatka", "Mongolia", "Siberia", "Yakutsk"));
+		territories.put("Japan", new Territory("Japan", "Asia", "Kamchatka", "Mongolia"));
+		territories.put("Kamchatka", new Territory("Kamchatka", "Asia", "Irkutsk", "Japan", "Mongolia", "Yakutsk", "Alaska"));
 		territories.put("Middle East", new Territory("Middle East", "Asia", "Afghanistan", "India", "Southern Europe", "Ukraine", "East Africa", "Egypt"));
-		territories.put("Mongolia", new Territory("Mongolia", "Asia", "China", "Irkutsh", "Japan", "Siberia", "Ural"));
+		territories.put("Mongolia", new Territory("Mongolia", "Asia", "China", "Irkutsk", "Japan", "Siberia", "Ural"));
 		territories.put("Siam", new Territory("Siam", "Asia", "China", "India", "Indonesia"));
-		territories.put("Siberia", new Territory("Siberia", "Asia", "China", "Irkutsh", "Mongolia", "Ural", "Yakutsh"));
+		territories.put("Siberia", new Territory("Siberia", "Asia", "China", "Irkutsk", "Mongolia", "Ural", "Yakutsk"));
 		territories.put("Ural", new Territory("Ural", "Asia", "Afghanistan", "China", "Siberia", "Ukraine"));
-		territories.put("Yakutsk", new Territory("Yakutsh", "Asia", "Irkutsh", "Kamohatka", "Siberia"));
+		territories.put("Yakutsk", new Territory("Yakutsk", "Asia", "Irkutsk", "Kamchatka", "Siberia"));
 
 		territories.put("Eastern Australia", new Territory("Eastern Australia", "Australia", "New Guinea", "Western Australia"));
 		territories.put("Indonesia", new Territory("Indonesia", "Australia", "New Guinea", "Siam"));
 		territories.put("New Guinea", new Territory("New Guinea", "Australia", "Eastern Australia", "Indonesia", "Western Australia"));
 		territories.put("Western Australia", new Territory("Western Australia", "Australia", "Eastern Australia", "New Guinea"));
 	}
+	
+	public boolean isGameStarted() {
+		return gamestarted;
+	}
 
+	/**
+	 * 
+	 * @return board's number of players
+	 */
+	public int getNumPlayers() {
+		return players.size();
+	}
+
+	public boolean startGame() {
+		if(getNumPlayers()<2)
+			return false;
+
+		for(Territory territory: territories.values())
+			if(territory.getOwner()==-1)
+				return false;
+
+		for(Player p: players) 
+			p.addArmies(40-(getNumPlayers()-2)*5);
+
+		gamestarted=true;
+		notifyObservers("Gamestart");	
+		
+		return true;
+	}
+
+	/**
+	 * 
+	 * @return current player number of armies not placed on board
+	 */
+	public int getPlayerArmies() {
+		return players.get(currentPlayer).getArmies();
+	}
+
+	/**
+	 * 
+	 * @return current player's color
+	 */
+	public String getPlayerColor() {
+		return players.get(currentPlayer).getColor();
+	}
+
+	/**
+	 * 
+	 * @param territory
+	 * @return territory's owner color
+	 */
+	public String getTerrColor(String territory) {
+		try {
+			return players.get(territories.get(territory).getOwner()).getColor();
+		} catch (Exception e) {
+			return "";
+		}
+	}
+
+	/**
+	 * Removes card from deck
+	 * @return card removed
+	 */
+	public Card getCard() {
+		if(deck.size()==0)
+			initDeck();
+		
+		return deck.pop();
+	}
+
+	/**
+	 * 
+	 * @param territory
+	 * @return number armies placed on territory 
+	 */
+	public int getTerrArmies(String territory) {
+		return territories.get(territory).getArmies();
+	}
+
+	/**
+	 * 
+	 * @param territory
+	 * @return territory owner id
+	 */
+	public int getTerrPlayer(String territory) {
+		return territories.get(territory).getOwner();
+	}
+
+	/**
+	 * 
+	 * @return current player number of cards
+	 */
+	public int getCardNr() {
+		return players.get(currentPlayer).getCardNr();
+	}
+
+	/**
+	 * 
+	 * @return deck size
+	 */
+	public int getCardsInDeck() {
+		return deck.size();
+	}
+
+	/**
+	 * 
+	 * @return current player's cards
+	 */
+	public ArrayList<Card> getCards() {
+		if(players.size()<1)
+			return new ArrayList<Card>();
+
+		if(getCardNr()>=5)
+			players.get(currentPlayer).redeem();
+
+		return players.get(currentPlayer).getCards();
+	}
+
+	/**
+	 * Add player to board
+	 * @param newPlayer player to add
+	 * @return true if correctly added, false otherwise
+	 */
 	public boolean addPlayer(Player newPlayer) {
 		for(Player player: players)
-			if(player.getColor()==newPlayer.getColor())
+			if(player.getColor().equals(newPlayer.getColor()))
 				return false;
 
 		players.add(newPlayer);
@@ -136,6 +278,11 @@ public class Board implements Serializable
 		return true;
 	}
 
+	/**
+	 * Adds the number of armies to a player
+	 * that he should received, based on
+	 * the territories he has
+	 */
 	private void reinforce() {
 		int nr=Math.round(players.get(currentPlayer).getNumTerritories());
 		nr+=checkContinents();
@@ -143,9 +290,14 @@ public class Board implements Serializable
 		players.get(currentPlayer).addArmies(nr);
 	}
 
+	/**
+	 * Having full continents deals bonus armies.
+	 * Calculates how many of those armies there are
+	 * to receive.
+	 * @return number of extra armies to add
+	 */
 	@SuppressWarnings("unused")
 	private int checkContinents() {
-		//TODO Eventualmente thread, para ver todos os continentes ao mesmo tempo
 		int nr=0;
 		int na=0,sa=0, europe=0, africa=0, asia=0, australia=0;
 
@@ -174,51 +326,27 @@ public class Board implements Serializable
 		return nr;
 	}
 
-	public int getPlayerArmies() {
-		return players.get(currentPlayer).getArmies();
-	}
-
-	public String getPlayerColor() {
-		return players.get(currentPlayer).getColor();
-	}
-
-	public String getTerrColor(String territory) {
-		try {
-			return players.get(territories.get(territory).getOwner()).getColor();
-		} catch (Exception e) {
-			return "";
-		}
-	}
-
-	public int getCardNr() {
-		return players.get(currentPlayer).getCardNr();
-	}
-
-	public int getCardsInDeck() {
-		return deck.size();
-	}
-
-	public ArrayList<Card> getCards() {
-		if(players.size()<1)
-			return new ArrayList<Card>();
-
-		if(getCardNr()>=5)
-			players.get(currentPlayer).redeem();
-
-		return players.get(currentPlayer).getCards();
-	}
-
+	/**
+	 * Checks if there is a valid combination to redeem the cards of the current player.
+	 * If there is, adds up the bonus armies resulting from redeeming them.
+	 * @return True if redeeming was possible.
+	 */
 	public boolean redeem() {
 		if(players.get(currentPlayer).redeem()) {
 			players.get(currentPlayer).addArmies(reinforcements);
 			advanceGolden();
 
+			notifyObservers("Redeem");
 			return true;
 		}
-
 		return false;
 	}
 
+	/**
+	 * Number of reinforcements to receive by card
+	 * redeeming raises on each redeem. This makes
+	 * that raise.
+	 */
 	private void advanceGolden() {
 		if(reinforcements<15)
 			reinforcements+=2;
@@ -227,11 +355,19 @@ public class Board implements Serializable
 		else reinforcements+=5;
 	}
 
+	/**
+	 * Occupy territory with armies
+	 * @param territory territory to occupy
+	 * @param armies number of armies to place on territory
+	 */
 	private void occupy(String territory,int armies) {
 		territories.get(territory).occupy(currentPlayer, armies);
 		players.get(currentPlayer).occupy(territories.get(territory));
 	}
 
+	/**
+	 * Randomly occupy entire board
+	 */
 	@SuppressWarnings("unchecked")
 	public void randomOccupy() {
 
@@ -251,36 +387,44 @@ public class Board implements Serializable
 			stash.push(drawn);
 		}
 
+		//Cleans track of newly occupied territories
+		//in order to receive a card he shouldn't
+		for(Player p:players)
+			p.mustReceiveCard();
+
 		deck=(Stack<Card>) stash.clone();
 		stash.clear();
 		Collections.shuffle(deck);
+		notifyObservers("Occupation");
 	}
-	
-	public boolean pickOccupy(String territory) {
+
+	/**
+	 * Occupy territory with armies (used for tests)
+	 * @param territory territory to occupy
+	 * @param armies number of armies to place on territory
+	 * @return true if success, false otherwise
+	 */
+	public boolean pickOccupy(String territory, int armies) {
 		if(territories.get(territory).getOwner()!=-1)
 			return false;
-		
-		occupy(territory,1);
-		
+
+		occupy(territory,armies);
+
 		if(currentPlayer==-1 || currentPlayer==players.size()-1)
 			currentPlayer=0;
 		else currentPlayer+=1;
 		
+		notifyObservers("Reinforce");
+
 		return true;
 	}
 
-	public Card getCard() {
-		return deck.pop();
-	}
-
-	public int getTerrArmies(String territory) {
-		return territories.get(territory).getArmies();
-	}
-
-	public int getTerrPlayer(String territory) {
-		return territories.get(territory).getOwner();
-	}
-
+	/**
+	 * Create attack from origin to target
+	 * @param origin name of origin territory
+	 * @param target name of target territory
+	 * @return true if success, false otherwise
+	 */
 	public boolean attack(String origin, String target) {
 		if(origin=="" || target=="")
 			return false;
@@ -317,19 +461,29 @@ public class Board implements Serializable
 						players.get(currentPlayer).addCard(card);
 				}
 			}
-
-
 		} else territories.get(origin).removeArmies(1);
-
-
+		
+		notifyObservers("Attack");
 
 		return true;
 	}
 
+	/**
+	 * Check if origin territory is connected to the one specified on target 
+	 * @param origin name of origin territory
+	 * @param target name of target territory
+	 * @return true if connected, false otherwise
+	 */
 	private boolean checkIfConnected(String origin, String target) {
 		return territories.get(origin).checkIfConnected(target);
 	}
 
+	/**
+	 * Reinforce armies placed on territory owned by current player
+	 * @param territory territory to reinforce
+	 * @param armies number of armies to add
+	 * @return true if success, false otherwise
+	 */
 	public boolean reinforce(String territory, int armies) {
 		if(territory=="")
 			return false;
@@ -339,10 +493,19 @@ public class Board implements Serializable
 
 		territories.get(territory).removeArmies(-armies);
 		players.get(currentPlayer).addArmies(-armies);
+		
+		notifyObservers("Reinforce");
 
 		return true;
 	}
 
+	/**
+	 * Move armies from one territory to another, both owned by current player
+	 * @param origin name of origin territory
+	 * @param target name of target territory
+	 * @param armies number of armies to move
+	 * @return true if success, false otherwise
+	 */
 	public boolean move(String origin, String target, int armies) {
 
 		if(origin=="" || target=="")
@@ -354,10 +517,16 @@ public class Board implements Serializable
 
 		territories.get(origin).removeArmies(armies);
 		territories.get(target).occupy(currentPlayer, armies);
+		
+		notifyObservers("Move");
 
 		return true;
 	}
 
+	/**
+	 * Pass the player's turn
+	 * @return true if possible, false game is over
+	 */
 	public boolean nextPlaying() {
 
 		if(players.get(currentPlayer).getNumTerritories()==41 || players.get(currentPlayer).getArmies()>0)
@@ -366,57 +535,21 @@ public class Board implements Serializable
 		if(players.get(currentPlayer).getNumTerritories()>0) {	
 			reinforce();
 
-			if(players.get(currentPlayer).getNumTerritories()>oldterr)
+			if(players.get(currentPlayer).mustReceiveCard())
 				players.get(currentPlayer).addCard(getCard());
-
-			oldterr=players.get(currentPlayer).getNumTerritories();
 		}
 
 		if(currentPlayer==-1 || currentPlayer==players.size()-1)
 			currentPlayer=0;
 		else currentPlayer+=1;
 
-		return true;
-	}
-
-	public int getNumPlayers() {
-		return players.size();
-	}
-
-	public boolean isGameStarted() {
-		return gamestarted;
-	}
-
-	public boolean startGame() {
-		if(getNumPlayers()<2)
-			return false;
+		notifyObservers("Turn");
 		
-		for(Territory territory: territories.values())
-			if(territory.getOwner()==-1)
-				return false;			
-
-		for(Player p: players) 
-			p.addArmies(40-(getNumPlayers()-2)*5);
-
-		gamestarted=true;
-
 		return true;
 	}
 
-	public static Board getInstance()
-	{
-		if(instance == null)
-			instance = new Board();
-
-		return instance;
-	}
-
-	public static void resetInstance() {
-		instance=new Board();
-	}
-	
-	private Object readResolve() throws ObjectStreamException
-	{
-		return instance; 
+	@Override
+	public void addObserver(GUICallback observer) throws RemoteException {
+		observers.add(observer);
 	}
 }

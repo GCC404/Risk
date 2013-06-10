@@ -8,27 +8,29 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 
-import risk.logic.Board;
-import risk.logic.Card;
-import risk.logic.Player;
+import risk.rmi.BoardInter;
 
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 
 @SuppressWarnings("serial")
 public class GameWindow extends JFrame {
-
+	
 	private JPanel contentPane;
 	private InvalidMove invalidMove=new InvalidMove();
-	private Board board=Board.getInstance();
-	private ArrayList<String> localPlayers;
+	private BoardInter board;
+	final JButton btnStartGame, btnRandomOccupy, btnPickTerritory, btnPhase, btnRedeem, btnAction;
+	final JLabel lblArmies2, lblSlider, lblCurrentlyPlaying2, lblCurrentlyPlaying;
+	final JSlider slider;
+	final Cards cards;
+	final Map map;
 
 	/**
 	 * Launch the application.
@@ -37,7 +39,7 @@ public class GameWindow extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					GameWindow frame = new GameWindow(new ArrayList<String>());
+					GameWindow frame = new GameWindow();
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -49,23 +51,11 @@ public class GameWindow extends JFrame {
 	/**
 	 * Create the frame.
 	 * @param colors 
+	 * @throws RemoteException 
+	 * @throws NotBoundException 
 	 */
-	public GameWindow(final ArrayList<String> players) {
-
-		this.localPlayers=players;
-		//TODO tirar isto
-		Player t=new Player("Pink",true);	
-		board.addPlayer(t);
-		localPlayers.add(t.getColor());
-		board.addPlayer(new Player("Red",true));
-		localPlayers.add("Red");
-		t.addCard(new Card("Alaska",1));
-		t.addCard(new Card("Australia",5));
-		t.addCard(new Card("Brazil",10));
-		t.addCard(new Card("Peru",10));
-
-		//board.randomOccupy();
-		//board.startGame();
+	public GameWindow() throws RemoteException, NotBoundException {
+		board = (BoardInter)LocateRegistry.getRegistry().lookup("rmi://localhost:1099/Board");
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 1450, 950);
@@ -75,12 +65,12 @@ public class GameWindow extends JFrame {
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 
-		final Map map = new Map();
+		map = new Map(board);
 
 		map.setBounds(10, 11, 1380, 748);
 		contentPane.add(map);
 
-		final Cards cards = new Cards();
+		cards = new Cards(board);
 		cards.setBounds(10, 770, 300, 140);
 		contentPane.add(cards);
 
@@ -89,22 +79,22 @@ public class GameWindow extends JFrame {
 		contentPane.add(panel_2);
 		panel_2.setLayout(new GridLayout(0, 6, 0, 0));
 
-		final JButton btnStartGame = new JButton("Start Game");
+		btnStartGame = new JButton("Start Game");
 		panel_2.add(btnStartGame);
 
-		final JButton btnRandomOccupy = new JButton("Random Occupy");
+		btnRandomOccupy = new JButton("Random Occupy");
 
 		panel_2.add(btnRandomOccupy);
 
-		final JButton btnPickTerritory = new JButton("Pick Territory");
+		btnPickTerritory = new JButton("Pick Territory");
 
 		panel_2.add(btnPickTerritory);
 
-		final JButton btnRedeem = new JButton("Redeem cards");
+		btnRedeem = new JButton("Redeem cards");
 
 		panel_2.add(btnRedeem);
 
-		final JButton btnPhase = new JButton("Next phase");
+		btnPhase = new JButton("Next phase");
 
 		panel_2.add(btnPhase);
 
@@ -118,10 +108,8 @@ public class GameWindow extends JFrame {
 				System.exit(0);
 			}
 		});
-
 		
-
-		final JButton btnAction = new JButton("Reinforce");
+		btnAction = new JButton("Reinforce");
 
 		panel_2.add(btnAction);
 		btnAction.setVisible(false);
@@ -132,11 +120,11 @@ public class GameWindow extends JFrame {
 		panel_2.add(panel);
 		panel.setLayout(null);
 
-		final JLabel lblCurrentlyPlaying = new JLabel("Currently playing:");
+		lblCurrentlyPlaying = new JLabel("Currently playing:");
 		lblCurrentlyPlaying.setBounds(10, 11, 105, 14);
 		panel.add(lblCurrentlyPlaying);
 
-		final JLabel lblCurrentlyPlaying2 = new JLabel(board.getPlayerColor());
+		lblCurrentlyPlaying2 = new JLabel(board.getPlayerColor());
 		lblCurrentlyPlaying2.setBounds(10, 28, 55, 14);
 		panel.add(lblCurrentlyPlaying2);
 
@@ -148,13 +136,13 @@ public class GameWindow extends JFrame {
 		lblArmies1.setBounds(10, 11, 59, 14);
 		panel_1.add(lblArmies1);
 
-		final JLabel lblArmies2 = new JLabel(board.getPlayerArmies()+"");
+		lblArmies2 = new JLabel(board.getPlayerArmies()+"");
 		lblArmies2.setBounds(10, 30, 105, 14);
 		panel_1.add(lblArmies2);
 
-		final JSlider slider = new JSlider();
+		slider = new JSlider();
 		slider.setMaximum(30);
-		final JLabel lblSlider = new JLabel(board.getPlayerArmies()+"");
+		lblSlider = new JLabel(board.getPlayerArmies()+"");
 
 		slider.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent arg0) {
@@ -175,24 +163,16 @@ public class GameWindow extends JFrame {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
 
-				if(!localPlayers.contains(board.getPlayerColor()) || board.isGameStarted()) {
-					invalidMove.setVisible(true);
-					return;
+				try {
+					if(!board.startGame()) {
+						invalidMove.setVisible(true);
+						return;
+					}
+				} catch (RemoteException e) {
+					e.printStackTrace();
 				}
-
-				//board.randomOccupy();
-				if(!board.startGame()) {
-					invalidMove.setVisible(true);
-					return;
-				}
-
-				btnRedeem.setVisible(true);
-				btnPhase.setVisible(true);
-				btnAction.setVisible(true);
-				btnPickTerritory.setVisible(false);
+				
 				btnStartGame.setVisible(false);
-				map.repaint();
-				lblArmies2.setText(board.getPlayerArmies()+"");
 			}
 		});
 
@@ -200,34 +180,32 @@ public class GameWindow extends JFrame {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 
-				if(!localPlayers.contains(board.getPlayerColor())) {
-					invalidMove.setVisible(true);
-					return;
-				}
-
 				switch(btnAction.getText()) {
 				case "Attack":
 					btnAction.setText("Fortify");
 					break;
 				case "Reinforce":
-					if(board.getPlayerArmies()>0) {
-						invalidMove.setVisible(true);
-						return;
+					try {
+						if(board.getPlayerArmies()>0) {
+							invalidMove.setVisible(true);
+							return;
+						}
+					} catch (RemoteException e1) {
+						e1.printStackTrace();
 					}				
 					btnAction.setText("Attack");
 					break;
 				case "Fortify":
-					if(!board.nextPlaying()) {
-						invalidMove.setVisible(true);
-						return;
+					try {
+						if(!board.nextPlaying()) {
+							invalidMove.setVisible(true);
+							return;
+						}
+					} catch (RemoteException e1) {
+						e1.printStackTrace();
 					}
-
-					lblCurrentlyPlaying2.setText(board.getPlayerColor());
-					lblArmies2.setText(board.getPlayerArmies()+"");
-					slider.setValue(board.getPlayerArmies());
+					
 					btnAction.setText("Reinforce");
-
-					repaint();
 					break;
 				}
 			}
@@ -236,47 +214,47 @@ public class GameWindow extends JFrame {
 		btnRandomOccupy.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
-				if(!localPlayers.contains(board.getPlayerColor())) {
-					invalidMove.setVisible(true);
-					return;
-				}
 
-				board.randomOccupy();
+				try {
+					board.randomOccupy();
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+				
 				btnPickTerritory.setVisible(false);
 				btnRandomOccupy.setVisible(false);
-				repaint();
 			}
 		});
 		
 		btnRedeem.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if(!localPlayers.contains(board.getPlayerColor())) {
-					invalidMove.setVisible(true);
-					return;
+				try {
+					if(!board.redeem()) {
+						invalidMove.setVisible(true);
+						return;
+					}
+				} catch (RemoteException e1) {
+					e1.printStackTrace();
 				}
-
-				if(!board.redeem()) {
-					invalidMove.setVisible(true);
-					return;
-				}
-
-				lblArmies2.setText(board.getPlayerArmies()+"");
-				repaint();
 			}
 		});
 
 		btnPickTerritory.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if(!localPlayers.contains(board.getPlayerColor())) {
+
+				if(map.getOrigin().equals("")) {
 					invalidMove.setVisible(true);
 					return;
 				}
-
-				if(board.pickOccupy(map.getOrigin()))
-					repaint();
-				else invalidMove.setVisible(true);
+					
+				try {
+					if(!board.pickOccupy(map.getOrigin(), 1))
+						invalidMove.setVisible(true);
+				} catch (RemoteException e1) {
+					e1.printStackTrace();
+				}
 
 				btnRandomOccupy.setVisible(false);
 			}
@@ -286,35 +264,70 @@ public class GameWindow extends JFrame {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 
-				if(!localPlayers.contains(board.getPlayerColor())) {
-					invalidMove.setVisible(true);
-					return;
-				}
-
 				switch(btnAction.getText()) {
 				case "Attack":
-					if(board.attack(map.getOrigin(), map.getTarget()))
-						repaint();
-					else invalidMove.setVisible(true);		
+					try {
+						if(!board.attack(map.getOrigin(), map.getTarget()))
+							invalidMove.setVisible(true);
+					} catch (RemoteException e1) {
+						e1.printStackTrace();
+					}		
 
 					break;
 				case "Reinforce":					
-					if(board.reinforce(map.getOrigin(),slider.getValue())) {
-						lblArmies2.setText(board.getPlayerArmies()+"");
-						repaint();
+					try {
+						if(!board.reinforce(map.getOrigin(),slider.getValue()))
+							invalidMove.setVisible(true);
+					} catch (RemoteException e1) {
+						e1.printStackTrace();
 					}
-					else invalidMove.setVisible(true);
 
 					break;
 				case "Fortify":					
-					if(board.move(map.getOrigin(), map.getTarget(),2))
-						repaint();
-					else invalidMove.setVisible(true);
+					try {
+						if(!board.move(map.getOrigin(), map.getTarget(),2))
+							invalidMove.setVisible(true);
+					} catch (RemoteException e1) {
+						e1.printStackTrace();
+					}
 
 					break;
 				}
 
 			}
 		});
+	}
+	
+	void disableButtons() {
+		btnRedeem.setVisible(false);
+		btnPhase.setVisible(false);
+		btnAction.setVisible(false);
+		btnPickTerritory.setVisible(false);
+		btnStartGame.setVisible(false);
+		btnRandomOccupy.setVisible(false);
+	}
+	
+	public void startTurn() {
+		btnRedeem.setVisible(true);
+		btnPhase.setVisible(true);
+		btnAction.setVisible(true);
+	}
+
+	public void updateLabels() {
+		try {
+			lblCurrentlyPlaying2.setText(board.getPlayerColor());
+			lblArmies2.setText(board.getPlayerArmies()+"");
+			slider.setValue(board.getPlayerArmies());
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void repaintMap() {
+		map.repaint();
+	}
+	
+	public void repaintCards() {
+		cards.repaint();
 	}
 }

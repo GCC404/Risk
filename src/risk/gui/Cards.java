@@ -4,13 +4,15 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
-import risk.logic.Board;
 import risk.logic.Card;
+import risk.rmi.BoardInter;
+
 import javax.swing.JLabel;
 
 @SuppressWarnings("serial")
@@ -19,11 +21,12 @@ public class Cards extends JPanel {
 	private ArrayList<Card> cards=new ArrayList<Card>();
 	private ArrayList<JLabel> labels=new ArrayList<JLabel>();
 	private BufferedImage cannon, soldier, horse;
-	private Board board=Board.getInstance();
+	private BoardInter board;
 	/**
 	 * Create the panel.
 	 */
-	public Cards() {
+	public Cards(BoardInter board) {
+		this.board=board;
 		try {
 			cannon=ImageIO.read(new File("cannon.png"));
 			soldier=ImageIO.read(new File("soldier.png"));
@@ -62,7 +65,11 @@ public class Cards extends JPanel {
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		
-		cards=board.getCards();
+		try {
+			cards=board.getCards();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
 		int x=0;
 		final int width=70, height=140;
 		

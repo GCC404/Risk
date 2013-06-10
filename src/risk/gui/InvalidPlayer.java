@@ -39,7 +39,7 @@ public class InvalidPlayer extends JDialog {
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
 		{
-			JLabel lblThatColorWas = new JLabel("Maximum number of players is 6 and colors must be unique.");
+			JLabel lblThatColorWas = new JLabel("Colors must be unique.");
 			contentPanel.add(lblThatColorWas);
 		}
 		{

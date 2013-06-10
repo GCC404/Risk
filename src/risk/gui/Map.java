@@ -4,19 +4,19 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
-import javax.swing.JPanel;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 
-import risk.logic.Board;
-
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import risk.rmi.BoardInter;
 
 @SuppressWarnings("serial")
 public class Map extends JPanel {
@@ -25,14 +25,16 @@ public class Map extends JPanel {
 	private ArrayList<String> terrnames=new ArrayList<String>();
 	private ArrayList<Rectangle> squares=new ArrayList<Rectangle>();
 	private ArrayList<JLabel> labels=new ArrayList<JLabel>();
-	private Board board=Board.getInstance();
+	private BoardInter board;
 	private boolean chosingOrigin=true;
 	private String origin="", target="";
 	/**
 	 * Create the panel.
+	 * @throws RemoteException 
 	 */
-	public Map() {
-
+	public Map(BoardInter board) throws RemoteException {
+		this.board=board;
+		//board.addObserver(this);
 		setLayout(null);
 		setBounds(0, 0, 1380, 748);
 		final JLabel lblOrigin = new JLabel("Origin:");
@@ -176,8 +178,6 @@ public class Map extends JPanel {
 		terrnames.add("Western Australia");
 		squares.add(new Rectangle(1168,572,width,height));
 
-		//TODO meter aqui o resto
-
 		for(int i=0; i<squares.size(); i++) {
 			JLabel label=new JLabel("0");
 			label.setBounds((int)squares.get(i).getX(), (int)squares.get(i).getY(), labelwidth, height);
@@ -190,10 +190,14 @@ public class Map extends JPanel {
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		g.drawImage(background, 0, 0, this.getWidth(), this.getHeight(), this);
-		drawSquares(g);
+		try {
+			drawSquares(g);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
 	}
 
-	private void drawSquares(Graphics g) {
+	private void drawSquares(Graphics g) throws RemoteException {
 		Graphics2D g2d=(Graphics2D) g;
 		g2d.setColor(Color.BLUE);
 		for(int i=0; i<squares.size(); i++) {
@@ -204,7 +208,7 @@ public class Map extends JPanel {
 		}
 	}
 
-	private Color choseColor(int i) {
+	private Color choseColor(int i) throws RemoteException {
 		switch(board.getTerrColor(terrnames.get(i))) {
 		case "Pink":
 			return Color.pink;
@@ -229,6 +233,13 @@ public class Map extends JPanel {
 
 	public String getTarget() {
 		return target;
+	}
+
+	public String notify(String phase) throws RemoteException {
+		System.out.println("Aconteceu algo no map");
+		repaint();
+		
+		return null;
 	}
 
 }
